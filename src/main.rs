@@ -15,7 +15,7 @@ const TRASH_IMG: &[u8] = include_bytes!("../assets/trash.png");
 struct Evaluacion {
     id: usize,
     nombre: String,
-    peso: u8,
+    peso: f32,
     nota: f32,
     slider: bool,
 }
@@ -25,7 +25,7 @@ struct Application {
     evaluaciones: Vec<Evaluacion>,
 
     nota_total_acumulada: f32,
-    peso_total_acumulado: u8,
+    peso_total_acumulado: f32,
 
     nombre_entrada: String,
     peso_entrada: String,
@@ -43,8 +43,8 @@ enum Message {
     //Ignore,
 }
 
-fn porcentaje_de_nota(nota: f32, peso: u8) -> f32 {
-    (nota / 20.0 * 100.0) * (peso as f32 / 100.0)
+fn porcentaje_de_nota(nota: f32, peso: f32) -> f32 {
+    (nota / 20.0 * 100.0) * (peso / 100.0)
 }
 
 impl Application {
@@ -54,7 +54,7 @@ impl Application {
                 evaluaciones: vec![],
 
                 nota_total_acumulada: 0.0,
-                peso_total_acumulado: 0,
+                peso_total_acumulado: 0.0,
 
                 nombre_entrada: String::from(""),
                 peso_entrada: String::from(""),
@@ -85,7 +85,7 @@ impl Application {
 
         for i in self.evaluaciones.clone() {
             let nombre: String = i.nombre;
-            let peso: u8 = i.peso;
+            let peso: f32 = i.peso;
             let nota: f32 = i.nota;
 
             evaluaciones.push(
@@ -205,7 +205,7 @@ impl Application {
                 };
 
                 let nombre = self.nombre_entrada.to_string();
-                let peso = self.peso_entrada.parse::<u8>().unwrap_or_default();
+                let peso = self.peso_entrada.parse::<f32>().unwrap_or_default();
                 let nota = self.nota_entrada.parse::<f32>().unwrap_or_default();
                 let slider = self.nota_entrada.is_empty();
 
@@ -238,8 +238,8 @@ impl Application {
                 if content.is_empty() {
                     self.peso_entrada = content;
                     return;
-                } else if let Ok(peso) = content.parse::<u8>() {
-                    if self.peso_total_acumulado + peso <= 100 {
+                } else if let Ok(peso) = content.parse::<f32>() {
+                    if self.peso_total_acumulado + peso <= 100.0 {
                         self.peso_entrada = content;
                     }
                 }
