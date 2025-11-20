@@ -46,7 +46,7 @@ jobs:
 
       - name: Build webapp
         id: build-webapp
-        run: trunk build --public-url 'https://claraucab.github.io/SalvarMateria/' --release -M
+        run: trunk build --public-url '/salvar-materia-rs' --release -M
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
