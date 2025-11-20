@@ -1,13 +1,13 @@
 use iced::{
     theme::Theme,
     widget::{
-        button, checkbox, column, container, container::Style, image, keyed_column, pane_grid, row,
-        scrollable, slider, text, text_input, toggler, Button, Column, Space, Text, Image,
+        button, column, container, container::Style, row, scrollable, slider, text, text_input,
+        Button, Column, Image,
     },
-    Border, Center, Color, ContentFit, Element, Fill, Length, Shrink, Task,
+    Border, Center, ContentFit, Element, Fill, Shrink, Task,
 };
 
-use iced::advanced::image::{Handle};
+use iced::advanced::image::Handle;
 
 const TRASH_IMG: &[u8] = include_bytes!("../assets/trash.png");
 
@@ -16,21 +16,15 @@ struct Evaluacion {
     id: usize,
     nombre: String,
     peso: u8,
-    nota: u8,
+    nota: f32,
     slider: bool,
-}
-
-#[derive(Debug)]
-enum Pane {
-    SomePane,
-    AnotherKindOfPane,
 }
 
 #[derive(Debug, Clone, Default)]
 struct Application {
     evaluaciones: Vec<Evaluacion>,
 
-    nota_total_acumulada: u8,
+    nota_total_acumulada: f32,
     peso_total_acumulado: u8,
 
     nombre_entrada: String,
@@ -46,11 +40,11 @@ enum Message {
     AgregarEvaluacionPresionado,
     EliminarEvaluacionPresionado(usize),
     SliderCambiado(usize, f32),
-    Ignore,
+    //Ignore,
 }
 
-fn porcentaje_de_nota(nota: u8, peso: u8) -> f32 {
-    (nota as f32 / 20.0 * 100.0) * (peso as f32 / 100.0)
+fn porcentaje_de_nota(nota: f32, peso: u8) -> f32 {
+    (nota / 20.0 * 100.0) * (peso as f32 / 100.0)
 }
 
 impl Application {
@@ -59,7 +53,7 @@ impl Application {
             Self {
                 evaluaciones: vec![],
 
-                nota_total_acumulada: 0,
+                nota_total_acumulada: 0.0,
                 peso_total_acumulado: 0,
 
                 nombre_entrada: String::from(""),
@@ -92,7 +86,7 @@ impl Application {
         for i in self.evaluaciones.clone() {
             let nombre: String = i.nombre;
             let peso: u8 = i.peso;
-            let nota: u8 = i.nota;
+            let nota: f32 = i.nota;
 
             evaluaciones.push(
                 container(row![
@@ -123,7 +117,7 @@ impl Application {
                         container(
                             column![
                                 text(format!("{} pts", nota)).size(20),
-                                slider(0.0..=20.0, nota as f32, move |j| {
+                                slider(0.0..=20.0, nota, move |j| {
                                     Message::SliderCambiado(i.id, j)
                                 })
                             ]
@@ -145,14 +139,22 @@ impl Application {
 
         container(
             column![
-                text(format!(
-                    "Nota total acumulada: {}/20 ó {}/100% ({}% evaluado)",
-                    (0.2f32 * self.nota_total_acumulada as f32).floor(),
-                    self.nota_total_acumulada,
-                    self.peso_total_acumulado,
-                    //self.evaluaciones.iter().map(|i| i.peso).sum::<u8>(),
-                ))
-                .size(20),
+                column![
+                    text(format!(
+                        "Nota real: {:.2}/20 ó {}/100% ({}% evaluado)",
+                        (0.2f32 * self.nota_total_acumulada),
+                        self.nota_total_acumulada.floor(),
+                        self.peso_total_acumulado,
+                    ))
+                    .size(20),
+                    text(format!(
+                        "Nota redondeada: {}/20 ó {}/100% ({}% evaluado)",
+                        (0.2f32 * self.nota_total_acumulada).round(),
+                        self.nota_total_acumulada.floor(),
+                        self.peso_total_acumulado,
+                    ))
+                    .size(20),
+                ],
                 container(scrollable(
                     container(Column::from_vec(evaluaciones).align_x(Center).spacing(20))
                         .center_x(Fill)
@@ -204,7 +206,7 @@ impl Application {
 
                 let nombre = self.nombre_entrada.to_string();
                 let peso = self.peso_entrada.parse::<u8>().unwrap_or_default();
-                let nota = self.nota_entrada.parse::<u8>().unwrap_or_default();
+                let nota = self.nota_entrada.parse::<f32>().unwrap_or_default();
                 let slider = self.nota_entrada.is_empty();
 
                 self.nombre_entrada.clear();
@@ -247,8 +249,8 @@ impl Application {
                 if content.is_empty() {
                     self.nota_entrada = content;
                     return;
-                } else if let Ok(nota) = content.parse::<u8>() {
-                    if nota <= 20 {
+                } else if let Ok(nota) = content.parse::<f32>() {
+                    if nota <= 20.0 {
                         self.nota_entrada = content;
                     }
                 }
@@ -256,18 +258,16 @@ impl Application {
 
             Message::SliderCambiado(id, value) => {
                 if let Some(index) = self.evaluaciones.iter().position(|i| i.id == id) {
-                    self.evaluaciones[index].nota = value.floor() as u8;
+                    self.evaluaciones[index].nota = value.floor();
                 }
-            }
-
-            Message::Ignore => {}
+            } //Message::Ignore => {}
         }
 
         // Actualiza la nota total acumulada
         self.nota_total_acumulada = self
             .evaluaciones
             .iter()
-            .map(|i| porcentaje_de_nota(i.nota, i.peso) as u8)
+            .map(|i| porcentaje_de_nota(i.nota, i.peso))
             .sum();
         // TODO: Handle slider
 
